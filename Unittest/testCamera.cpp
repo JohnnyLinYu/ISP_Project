@@ -21,6 +21,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <unordered_map>
+#include <chrono>
 #include <atomic>
 #include "../include/thread_pool.h"
 using namespace std;
@@ -35,6 +36,8 @@ static condition_variable cvar;
 static bool shootOK = false;
 int buffercount = 10; // 歷史回顧參數
 int cnt = 0;
+int frameCount = 0;
+double fpsAvg = 0.0;
 
 //相機參數
 std::shared_ptr<Camera> camera;
@@ -241,15 +244,35 @@ int main()
         camera->queueRequest(request.get());
 
     // 暫停主執行續等待相機端做完
+    auto lastFrame   = std::chrono::steady_clock::now();   // 上一次顯示的時間
+    auto windowStart = std::chrono::steady_clock::now();   // 平均區間的起點
     while(true)
     {
         {
             unique_lock<mutex> lock(mtx);
             cvar.wait(lock, [](){return shootOK;});
             shootOK = false;
+            cv::putText(DisplayImage, cv::format("FPS %.1f", fpsAvg), {20, 40},
+                    cv::FONT_HERSHEY_SIMPLEX, 1.0, {0, 255, 0}, 2);
             cv::imshow("Live View", DisplayImage);
         }
-        // 顯示影像
+        
+        // 計算FPS
+        auto now = std::chrono::steady_clock::now();
+        double dt = std::chrono::duration<double>(now - lastFrame).count();   // 單位：秒，有小數
+        lastFrame = now;
+        double fpsInstant = (dt > 0) ? 1.0 / dt : 0.0;
+
+        ++frameCount;
+        double elapsed = std::chrono::duration<double>(now - windowStart).count();
+        if (elapsed >= 1.0)
+        {
+            fpsAvg = frameCount / elapsed;
+            cout << "Display FPS: " << fpsAvg << "  (instant " << fpsInstant << ")" << endl;
+            frameCount  = 0;
+            windowStart = now;
+        }
+
         int key = cv::waitKey(1);
         if(key == 'q' || key == 27) break;
     }
