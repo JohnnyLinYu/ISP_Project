@@ -7,12 +7,18 @@ find_package(OpenCV REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBCAMERA REQUIRED IMPORTED_TARGET libcamera)
 
-add_executable(hello src/main.cpp)
+add_executable(hello 
+src/main.cpp 
+src/thread_pool.cpp 
+src/CameraControl.cpp 
+src/LatestFrame.cpp 
+src/opencv_display.cpp)
 add_executable(Unittest 
 Unittest/testCamera.cpp 
 src/thread_pool.cpp
 )
 target_include_directories(Unittest PRIVATE include)
+target_include_directories(hello PRIVATE include)
 target_link_libraries(hello PRIVATE 
 	${OpenCV_LIBS}
 	PkgConfig::LIBCAMERA

@@ -103,26 +103,6 @@ void processRequest(Request *request)
         size_t offset = planes.offset;
         size_t length = planes.length;
         
-        // void *base = mmap(nullptr, offset + length, PROT_READ, MAP_SHARED, fd, 0);
-        // if(base == MAP_FAILED)
-        // {
-        //     cerr << "mmap" << endl;
-        // }
-        // else 
-        // {
-        //     uint8_t *imageData = static_cast<uint8_t*>(base) + offset;
-        //     // 進行複製
-        //     // memcpy(ImageBuffer[metadata.sequence].data, imageData, 1920*1080*3);
-        //     memcpy(DisplayImage.data, unmap[buffer], twidth*theight*3);
-        //     cout << "Copy Success ID : " << metadata.sequence << endl;
-        //     //釋放
-        //     munmap(base, offset + length);
-        // }
-        
-
-        //釋放
-        // display only
-        // if(metadata.sequence == buffercount - 1)
         {
             unique_lock<mutex> lock(mtx);
             memcpy(DisplayImage.data, unmap.at(buffer).pixels, gWidth*gHeight*3);
@@ -224,7 +204,7 @@ int main()
         }
 
         const unique_ptr<FrameBuffer> &buffer = buffers[i];
-        int ret = request->addBuffer(stream, buffer.get()); // 這裡有綁定buffe，釋放的時候要注意
+        int ret = request->addBuffer(stream, buffer.get()); // 這裡有綁定buffer，釋放的時候要注意
 
         if(ret < 0)
         {
